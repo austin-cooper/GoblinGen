@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
 
 namespace GoblinGen
 {
@@ -15,6 +18,7 @@ namespace GoblinGen
         protected String SkillAttribUsed { get; set; }
         protected bool IsTrainedOnly { get; set; }
         protected bool SkillArmorCheckPenalty { get; set; }
+        
 
 
         //constructor with null checks
@@ -29,7 +33,7 @@ namespace GoblinGen
         //ToString override
         public override string ToString()
         {
-            String s = this.SkillName + "\t+\t" + SkillAttribUsed\t";
+            String s = this.SkillName + "\t+\t" + SkillAttribUsed +"\t";
             if (DoesArmorCheckApply())
             {
                 s += "Trained Only\t";
@@ -56,6 +60,23 @@ namespace GoblinGen
             {
                 return false;
             }
+        }
+
+        //returns the SQLParameter object needed to write to the db
+        public List<SqlParameter> GetSQLParameters()
+        {
+            List<SqlParameter> sqlParams = new List<SqlParameter>();
+            SqlParameter param = new SqlParameter("@SkillName", SqlDbType.VarChar, 50);
+            sqlParams.Add(param);
+            SqlParameter param1 = new SqlParameter("@SkillAttribute", SqlDbType.VarChar, 50);
+            sqlParams.Add(param1);
+            SqlParameter param2 = new SqlParameter("@TrainedOnly", SqlDbType.Bit);
+            sqlParams.Add(param2);
+            SqlParameter param3 = new SqlParameter("@ArmorCheckPenalty", SqlDbType.Bit);
+            sqlParams.Add(param3);
+
+
+            return sqlParams;
         }
     }
 }

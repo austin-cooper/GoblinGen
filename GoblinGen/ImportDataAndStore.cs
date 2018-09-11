@@ -12,7 +12,7 @@ using System.Collections.Generic;
 
 namespace GoblinGen
 {
-    class ImportDataAndStore
+    internal static class ImportDataAndStore
     {
 
         public static void ImportAndStore(string directory, string connectionString,
@@ -50,6 +50,8 @@ namespace GoblinGen
 
         static void WriteToDB(string connectionString, string dbStatement, IEnumerable data, Type type)
         {
+
+            //tries to create and open a connection to the database
             SqlConnection connection = new SqlConnection(connectionString);
 
 
@@ -69,13 +71,21 @@ namespace GoblinGen
                 var tempObj = Activator.CreateInstance(type);
                 tempObj = Convert.ChangeType(dataObj, type);
                 //check to see if the method exists in Type type
-                var methodInfo = type.GetMethod("GetSQLParameters");
+                MethodInfo methodInfo = type.GetMethod("GetSQLParameters");
                 if (methodInfo == null)
                 {
                     //throw some exception
                 }
 
-                command.Parameters.Add(methodInfo.Invoke(tempObj, null));
+                //IEnumerable<SqlParameter> sqlParameters = new List<SqlParameter>();
+                Object o = methodInfo.Invoke(tempObj, null);
+               
+                //methodInfo.Invoke(tempObj, null)
+                foreach (var sqlParam in o as IEnumerable<SqlParameter>)
+                {
+                    command.Parameters.Add(sqlParam);
+                }
+
                 command.ExecuteNonQuery();
             }
         }
