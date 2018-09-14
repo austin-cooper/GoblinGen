@@ -1,10 +1,6 @@
-﻿using System.Text;
-using System.Threading.Tasks;
-using System.Web.Script.Serialization;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System.IO;
 using System.Data.SqlClient;
-using System.Data;
 using System.Reflection;
 using System;
 using System.Collections;
@@ -26,9 +22,9 @@ namespace GoblinGen
         //helper method that uses reflection, the JSON.net reference to read in a JSON file
         //from a passed in directory, to convert that stream into the type of variable type
         //and add it to a List<object> returning the list
-        static IEnumerable ImportJSON(Type type, string directory)
+        private static IEnumerable ImportJSON(Type type, string directory)
         {
-            var ImportObject = Activator.CreateInstance(type);
+            var ImportObject =  Activator.CreateInstance(type);
             var StartPath = System.IO.Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
             DirectoryInfo d = new DirectoryInfo(StartPath + directory);
             List<object> objList = new List<object>();
@@ -39,7 +35,8 @@ namespace GoblinGen
                 using (StreamReader r = File.OpenText(file.FullName))
                 {
                     String json = r.ReadToEnd();
-                    ImportObject = Convert.ChangeType(JsonConvert.DeserializeObject<Object>(json), type);
+                    //ImportObject = Convert.ChangeType(JsonConvert.DeserializeObject<Object>(json), type);
+                    ImportObject = JsonConvert.DeserializeObject<Object>(json);
                     objList.Add(ImportObject);
                 }
             }
@@ -48,7 +45,7 @@ namespace GoblinGen
             return objList;
         }
 
-        static void WriteToDB(string connectionString, string dbStatement, IEnumerable data, Type type)
+        private static void WriteToDB(string connectionString, string dbStatement, IEnumerable data, Type type)
         {
 
             //tries to create and open a connection to the database
@@ -69,7 +66,9 @@ namespace GoblinGen
             foreach (var dataObj in data)
             {
                 var tempObj = Activator.CreateInstance(type);
-                tempObj = Convert.ChangeType(dataObj, type);
+                //tempObj = dataObj;
+                //tempObj = Convert.ChangeType(dataObj, type);
+               
                 //check to see if the method exists in Type type
                 MethodInfo methodInfo = type.GetMethod("GetSQLParameters");
                 if (methodInfo == null)
@@ -78,7 +77,7 @@ namespace GoblinGen
                 }
 
                 //IEnumerable<SqlParameter> sqlParameters = new List<SqlParameter>();
-                Object o = methodInfo.Invoke(tempObj, null);
+                Object o = methodInfo.Invoke(tempObj , null);
                
                 //methodInfo.Invoke(tempObj, null)
                 foreach (var sqlParam in o as IEnumerable<SqlParameter>)

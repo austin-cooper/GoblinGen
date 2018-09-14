@@ -12,16 +12,15 @@ namespace GoblinGen
 {
     class CreateNpc
     {
-        public static void Main(String[] args)
-        {
-            ImportDataAndStore.ImportAndStore("C:\\Users\\trae.cooper\\source\\repos\\PSRD-Data\\core_rulebook\\skill",
+        public static void Main(String[] args) => ImportDataAndStore.ImportAndStore("\\skill",
                 "Data Source = (LocalDB)\\MSSQLLocalDB; AttachDbFilename = C:\\Users\\trae.cooper\\source\\repos\\GoblinGen"
                 + "\\GoblinGen\\PFDataStore.mdf; Integrated Security = True; Connect Timeout = 30",
                 "INSERT INTO dbo.Skills(SkillName, SkillAttribute, TrainedOnly, ArmorCheckPenalty) " +
                 "VALUES(@SkillName, @SkillAttribute, @TrainedOnly, @ArmorCheckPenalty )", typeof(Skill));
 
 
-        }
+
+      
 
     }
 
