@@ -65,6 +65,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CreateNpc.cs" />
+    <Compile Include="Feat.cs" />
     <Compile Include="Humanoid.cs" />
     <Compile Include="ImportDataAndStore.cs" />
     <Compile Include="Npc.cs" />
