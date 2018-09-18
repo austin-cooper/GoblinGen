@@ -1,10 +1,6 @@
-﻿using System.Text;
-using System.Threading.Tasks;
-using System.Web.Script.Serialization;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System.IO;
 using System.Data.SqlClient;
-using System.Data;
 using System.Reflection;
 using System;
 using System.Collections;
@@ -18,20 +14,20 @@ namespace GoblinGen
         public static void ImportAndStore(string directory, string connectionString,
             string dbStatement, Type type)
         {
-            IEnumerable enumerable = ImportJSON(type, directory);
+            IEnumerable<String> enumerable = ImportJSON(directory);
             WriteToDB(connectionString, dbStatement, enumerable, type);
         }
 
 
         //helper method that uses reflection, the JSON.net reference to read in a JSON file
-        //from a passed in directory, to convert that stream into the type of variable type
-        //and add it to a List<object> returning the list
-        static IEnumerable ImportJSON(Type type, string directory)
+        //from a passed in directory, to convert that stream into a string and store it
+        // in a collection IEnumberable<string> for later use
+        private static IEnumerable<string> ImportJSON(string directory)
         {
-            var ImportObject = Activator.CreateInstance(type);
+            //var ImportObject =  Activator.CreateInstance(type);
             var StartPath = System.IO.Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
             DirectoryInfo d = new DirectoryInfo(StartPath + directory);
-            List<object> objList = new List<object>();
+            List<String> stringList = new List<String>();
 
 
             foreach (var file in d.GetFiles("*.json"))
@@ -39,16 +35,16 @@ namespace GoblinGen
                 using (StreamReader r = File.OpenText(file.FullName))
                 {
                     String json = r.ReadToEnd();
-                    ImportObject = Convert.ChangeType(JsonConvert.DeserializeObject<Object>(json), type);
-                    objList.Add(ImportObject);
+                    stringList.Add(json);
+                   
                 }
             }
 
 
-            return objList;
+            return stringList;
         }
 
-        static void WriteToDB(string connectionString, string dbStatement, IEnumerable data, Type type)
+        private static void WriteToDB(string connectionString, string dbStatement, IEnumerable<String> jsonStrings, Type type)
         {
 
             //tries to create and open a connection to the database
@@ -64,29 +60,43 @@ namespace GoblinGen
                 Console.WriteLine(e.ToString());
             }
 
+            //creates an Sqlcommand object for sending INSERT commands later
             SqlCommand command = new SqlCommand(dbStatement, connection);
 
-            foreach (var dataObj in data)
+
+            //parses each json formatted string into Type type using reflection
+            //gets the SQL parameters from the Type using reflection
+            foreach (var jsonString in jsonStrings)
             {
                 var tempObj = Activator.CreateInstance(type);
-                tempObj = Convert.ChangeType(dataObj, type);
+                tempObj = Convert.ChangeType(JsonConvert.DeserializeObject(jsonString, type), type);
+                
+
                 //check to see if the method exists in Type type
                 MethodInfo methodInfo = type.GetMethod("GetSQLParameters");
                 if (methodInfo == null)
                 {
-                    //throw some exception
+                    throw new Exception("Method not found");
                 }
 
-                //IEnumerable<SqlParameter> sqlParameters = new List<SqlParameter>();
-                Object o = methodInfo.Invoke(tempObj, null);
-               
-                //methodInfo.Invoke(tempObj, null)
+                //invoke the GetSQLParameters() method from object
+                Object o = methodInfo.Invoke(tempObj , null);
+                
+                //build a parameter for insert for each field in the object
                 foreach (var sqlParam in o as IEnumerable<SqlParameter>)
                 {
                     command.Parameters.Add(sqlParam);
+                    
                 }
 
                 command.ExecuteNonQuery();
+                command.Parameters.Clear();
+            }
+
+            //close open connections
+            if (connection != null && connection.State == System.Data.ConnectionState.Closed)
+            {
+                connection.Close();
             }
         }
     }
