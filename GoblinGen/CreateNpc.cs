@@ -27,6 +27,7 @@ namespace GoblinGen
            {
                 string json = r.ReadToEnd();
                 featTest =  JsonConvert.DeserializeObject<Feat>(json);
+                featTest.InitializeFeat();
 
             }
 
